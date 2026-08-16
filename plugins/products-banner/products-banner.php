@@ -13,9 +13,12 @@ Text Domain: products-banner
 namespace ProductsBanner;
 
 use ProductsBanner\Controllers\SettingsController;
+use ProductsBanner\Parsers\BannersParser;
 use ProductsBanner\Repositories\SettingsRepository;
 use ProductsBanner\Services\SettingsService;
+use ProductsBanner\Views\RepeatFieldView;
 use ProductsBanner\Views\SettingsPageView;
+use ProductsBanner\Views\SkipFieldView;
 
 if (!defined("ABSPATH")) {
     exit;
@@ -44,9 +47,15 @@ class ProductsBannerPlugin
     private readonly SettingsController $settings_controller;
     private readonly SettingsPageView $settings_page_view;
 
+    private readonly RepeatFieldView $repeat_field_view;
+
+    private readonly SkipFieldView $skip_field_view;
+
     private readonly SettingsRepository $settings_repository;
 
     private readonly SettingsService $settings_service;
+
+    private readonly BannersParser $banners_parser;
 
     public static function get_instance(): ProductsBannerPlugin
     {
@@ -54,6 +63,37 @@ class ProductsBannerPlugin
             self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    public function enqueue_admin_scripts($hook): void
+    {
+        if ($hook !== 'woocommerce_page_' . SettingsService::OPTION_NAME) {
+            return;
+        }
+
+        wp_enqueue_media();
+
+        wp_enqueue_script(
+            'products-banner-admin',
+            plugin_dir_url(__FILE__) . '../assets/admin.js',
+            ['jquery', 'media-views', 'wp-i18n'],
+            '1.0.0',
+            true
+        );
+
+        wp_localize_script('products-banner-admin', 'productsBannerData', [
+            'optionName' => SettingsService::OPTION_NAME,
+            'domain' => SettingsService::DOMAIN,
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('products_banner_nonce'),
+        ]);
+
+        wp_enqueue_style(
+            'products-banner-admin',
+            plugin_dir_url(__FILE__) . '../assets/admin.css',
+            [],
+            '1.0.0'
+        );
     }
 
     public function activate(): void
@@ -68,6 +108,7 @@ class ProductsBannerPlugin
 
     private function __construct()
     {
+        $this->init_parsers();
         $this->init_repositories();
         $this->init_services();
         $this->init_views();
@@ -75,9 +116,14 @@ class ProductsBannerPlugin
         $this->register_hooks();
     }
 
+    private function init_parsers(): void
+    {
+        $this->banners_parser = new BannersParser();
+    }
+
     private function init_repositories(): void
     {
-        $this->settings_repository = new SettingsRepository();
+        $this->settings_repository = new SettingsRepository($this->banners_parser);
     }
 
     private function init_services(): void
@@ -88,16 +134,25 @@ class ProductsBannerPlugin
     private function init_views(): void
     {
         $this->settings_page_view = new SettingsPageView();
+        $this->skip_field_view = new SkipFieldView();
+        $this->repeat_field_view = new RepeatFieldView();
     }
 
     private function init_controllers(): void
     {
-        $this->settings_controller = new SettingsController($this->settings_page_view, $this->settings_service);
+        $this->settings_controller = new SettingsController(
+            $this->settings_page_view,
+            $this->settings_service,
+            $this->skip_field_view,
+            $this->repeat_field_view
+        );
     }
 
     private function register_hooks(): void
     {
+        add_action('admin_init', [$this->settings_controller, 'register_settings']);
         add_action("admin_menu", [$this->settings_controller, "register_editing_page"], 100);
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
     }
 }
 

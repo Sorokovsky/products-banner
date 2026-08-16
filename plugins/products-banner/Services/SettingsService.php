@@ -22,4 +22,9 @@ class SettingsService
     {
         return $this->repository->get_settings();
     }
+
+    public function sanitize(array $input): array
+    {
+        return $this->repository->sanitize($input);
+    }
 }
