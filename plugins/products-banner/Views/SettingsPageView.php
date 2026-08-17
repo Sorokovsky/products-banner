@@ -15,9 +15,7 @@ class SettingsPageView
 
     private function render_html(): string
     {
-        $option_name = SettingsService::OPTION_NAME; // ← Додаємо змінну
-        $domain = SettingsService::DOMAIN;
-        $title = SettingsService::TITLE;
+        $option_name = SettingsService::OPTION_NAME;
         ob_start();
         ?>
         <div class="wrap products-banner-settings">
@@ -61,13 +59,13 @@ class SettingsPageView
                 max-width: 1200px;
                 margin: 20px 20px 0 0;
             }
-            
+
             .products-banner-settings h1 {
                 margin-bottom: 20px;
                 padding-bottom: 10px;
                 border-bottom: 1px solid #ccc;
             }
-            
+
             .products-banner-form {
                 background: #fff;
                 padding: 20px 25px;
@@ -75,16 +73,16 @@ class SettingsPageView
                 box-shadow: 0 1px 1px rgba(0,0,0,.04);
                 margin-bottom: 20px;
             }
-            
+
             .products-banner-form .form-table th {
                 width: 200px;
                 padding: 20px 10px 20px 0;
             }
-            
+
             .products-banner-form .form-table td {
                 padding: 20px 10px;
             }
-            
+
             .submit-wrapper {
                 display: flex;
                 align-items: center;
@@ -93,90 +91,90 @@ class SettingsPageView
                 border-top: 1px solid #ddd;
                 margin-top: 20px;
             }
-            
+
             .submit-wrapper .spinner {
                 float: none;
                 margin: 0;
             }
-            
+
             .products-banner-info {
                 background: #f1f1f1;
                 padding: 20px 25px;
                 border-left: 4px solid #2271b1;
                 margin-top: 20px;
             }
-            
+
             .products-banner-info h3 {
                 margin-top: 0;
                 color: #1d2327;
             }
-            
+
             .products-banner-info ul {
                 margin: 10px 0 0;
                 padding-left: 20px;
             }
-            
+
             .products-banner-info ul li {
                 margin: 8px 0;
                 list-style: disc;
             }
-            
+
             /* Стилі для таблиці банерів */
             #banners-table {
                 margin: 10px 0;
             }
-            
+
             #banners-table .banner-row td {
                 vertical-align: middle;
                 padding: 8px 10px;
             }
-            
+
             #banners-table .regular-text {
                 width: 100%;
                 max-width: 400px;
             }
-            
+
             #banners-table .remove-banner {
                 color: #a00;
                 border-color: #a00;
             }
-            
+
             #banners-table .remove-banner:hover {
                 color: #dc3232;
                 border-color: #dc3232;
                 background: #fbeaea;
             }
-            
+
             #add-banner {
                 margin-top: 5px;
             }
-            
+
             /* Медіа-запити для адаптивності */
             @media screen and (max-width: 782px) {
                 .products-banner-form .form-table th {
                     width: 100%;
                     padding: 10px 0 5px;
                 }
-                
+
                 .products-banner-form .form-table td {
                     padding: 5px 0 15px;
                 }
-                
+
                 #banners-table .regular-text {
                     max-width: 100%;
                 }
-                
+
                 .submit-wrapper {
                     flex-direction: column;
                     align-items: flex-start;
                 }
             }
-            
+
             @media screen and (max-width: 600px) {
                 .products-banner-settings {
                     margin: 10px 10px 0 0;
                 }
-                
+
                 .products-banner-form {
                     padding: 15px;
                 }

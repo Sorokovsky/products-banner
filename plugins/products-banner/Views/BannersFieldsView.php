@@ -7,6 +7,13 @@ use ProductsBanner\Services\SettingsService;
 
 class BannersFieldsView
 {
+    private readonly BannerItemFieldView $banner_item_field_view;
+
+    public function __construct(BannerItemFieldView $banner_item_field_view)
+    {
+        $this->banner_item_field_view = $banner_item_field_view;
+    }
+
 /**
  * @var array<BannerModel>
  * @return string
@@ -15,7 +22,7 @@ class BannersFieldsView
     {
         $html = $this->render_html($banners);
         $styles = $this->render_styles();
-        $scripts = $this->render_scripts();
+        $scripts = $this->render_scripts($banners);
         return $html.$styles.$scripts;
     }
 
@@ -26,16 +33,10 @@ class BannersFieldsView
     private function render_html(array $banners): string
     {
         $domain = SettingsService::DOMAIN;
-        $option_name = SettingsService::OPTION_NAME;
-        $banners_key = SettingsRepository::BANNERS;
         $image_title = __('Зображення', $domain);
         $url_title = __('Посилання (URL)', $domain);
         $action_title = __('Дія', $domain);
         $add_baner = __('Додати банер', $domain);
-        $name = esc_attr($option_name);
-        $key = esc_attr($banners_key);
-        $image_key = esc_attr(SettingsRepository::IMAGE);
-        $url_key = esc_attr(SettingsRepository::URL);
         $html = <<<HTML
             <div id="banners-repeater">
                 <table class="widefat" id="banners-table">
@@ -49,25 +50,8 @@ class BannersFieldsView
                     <tbody>
 HTML;
                 if (!empty($banners) && is_array($banners)) {
-                    foreach ($banners as $banner) {
-                        $image = esc_attr($banner->get_image() ?? '');
-                        $url = esc_attr($banner->get_url() ?? '');
-                        $html .= <<< HTML
-                        <tr class="banner-row">
-                            <td>
-                                <div class="banner-image-wrapper">
-                                    <input type="hidden" class="banner-image-url"
-                                        name="{$name}[{$key}][][{$image_key}]"
-                                        value="{$image}" />
-                                </div>
-                            </td>
-                            <td>
-                                <input type="url" class="regular-text banner-url"
-                                    name="{$name}[{$key}][][{$url_key}]"
-                                    value="{$url}" placeholder="https://example.com" />
-                            </td>
-                        </tr>
-                    HTML;
+                    foreach ($banners as $index => $banner) {
+                        $html .= $this->banner_item_field_view->render($index, $banner);
                     }
                 }
                 else {
@@ -149,19 +133,18 @@ HTML;
         return $styles;
     }
 
-    private function render_scripts(): string
+    /**
+     * @var array<BannerModel>
+     * @return string
+     */
+    private function render_scripts(array $banners): string
     {
         $domain = SettingsService::DOMAIN;
-        $option_name = SettingsService::OPTION_NAME;
-        $banners_key = SettingsRepository::BANNERS;
         $media_title = __('Виберіть зображення для банера', $domain);
         $media_button_text = __('Вибрати', $domain);
-        $no_image = __('Зображення не вибрано', $domain);
-        $image_key = esc_attr(SettingsRepository::IMAGE);
-        $url_key = esc_attr(SettingsRepository::URL);
-        $choose_image = __('Вибрати зображення', $domain);
-        $delete = __('Видалити', $domain);
         $confirm = __('Ви впевнені, що хочете видалити цей банер?', $domain);
+        $no_image = __('Зображення не вибрано', $domain);
+        $count = count($banners);
         $scripts = <<<HTML
         <script type="text/javascript">
             jQuery(document).ready(function ($) {
@@ -206,33 +189,7 @@ HTML;
                 function addNewRow() {
                     var tableBody = $('#banners-table tbody');
                     tableBody.find('.no-banners-message').remove();
-                    var newRow = `
-            <tr class="banner-row">
-                <td>
-                    <div class="banner-image-wrapper">
-                        <input type="hidden"
-                               class="banner-image-url"
-                               name="{$option_name}[{$banners_key}][][{$image_key}]"
-                               value="" />
-                        <div class="banner-image-preview">
-                            <span class="no-image">{$no_image}</span>
-                        </div>
-                        <div class="banner-image-actions">
-                            <button type="button" class="button button-small select-banner-image">{$choose_image}</button>
-                            <button type="button" class="button button-small remove-banner-image" style="display:none;">{$delete}</button>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <input type="url" class="regular-text banner-url"
-                           name="{$option_name}[{$banners_key}][][${url_key}]"
-                           placeholder="https://example.com" />
-                </td>
-                <td>
-                    <button type="button" class="button remove-banner">{$delete}</button>
-                </td>
-            </tr>
-            `;
+                    var newRow = `{$this->banner_item_field_view->render($count, null)}`;
                     tableBody.append(newRow);
                 }
                 $('#add-banner').on('click', function () {

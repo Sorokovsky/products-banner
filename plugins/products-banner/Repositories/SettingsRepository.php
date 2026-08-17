@@ -39,30 +39,23 @@ class SettingsRepository
         if (!is_array($input)) {
             return [];
         }
-
         $sanitized = [];
         if (isset($input[self::BANNERS]) && is_array($input[self::BANNERS])) {
             $banners = array_values($input[self::BANNERS]);
             foreach ($banners as $banner) {
-                if (!is_array($banner) || !isset($banner[self::IMAGE]) || !isset($banner[self::URL])) {
+                if (!isset($banner[self::IMAGE]) || !isset($banner[self::URL])) {
                     continue;
                 }
-
                 $image = trim($banner[self::IMAGE]);
                 $url = trim($banner[self::URL]);
-
                 if (empty($image) || empty($url)) {
                     continue;
                 }
-
-                $sanitized_image = sanitize_url($image, ['http', 'https']);
-                $sanitized_url = sanitize_url($url, ['http', 'https']);
-
+                $sanitized_image = esc_url_raw($image);
+                $sanitized_url = esc_url_raw($url);
                 if (empty($sanitized_image) || empty($sanitized_url)) {
                     continue;
                 }
-
-                // Використовуємо [] для автоматичної переіндексації
                 $sanitized[self::BANNERS][] = [
                     self::IMAGE => $sanitized_image,
                     self::URL => $sanitized_url

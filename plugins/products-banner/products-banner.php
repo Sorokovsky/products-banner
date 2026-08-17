@@ -16,6 +16,7 @@ use ProductsBanner\Controllers\SettingsController;
 use ProductsBanner\Parsers\BannersParser;
 use ProductsBanner\Repositories\SettingsRepository;
 use ProductsBanner\Services\SettingsService;
+use ProductsBanner\Views\BannerItemFieldView;
 use ProductsBanner\Views\BannersFieldsView;
 use ProductsBanner\Views\RepeatFieldView;
 use ProductsBanner\Views\SettingsPageView;
@@ -43,9 +44,8 @@ spl_autoload_register(function (string $class) {
 
 class ProductsBannerPlugin
 {
-    private static ?ProductsBannerPlugin $instance = null;
-
     private readonly SettingsController $settings_controller;
+
     private readonly SettingsPageView $settings_page_view;
 
     private readonly RepeatFieldView $repeat_field_view;
@@ -54,19 +54,13 @@ class ProductsBannerPlugin
 
     private readonly BannersFieldsView $banners_fields_view;
 
+    private readonly BannerItemFieldView $banner_item_field_view;
+
     private readonly SettingsRepository $settings_repository;
 
     private readonly SettingsService $settings_service;
 
     private readonly BannersParser $banners_parser;
-
-    public static function get_instance(): ProductsBannerPlugin
-    {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
 
     public function enqueue_admin_scripts(string $hook): void
     {
@@ -109,7 +103,7 @@ class ProductsBannerPlugin
 
     }
 
-    private function __construct()
+    public function __construct()
     {
         $this->init_parsers();
         $this->init_repositories();
@@ -136,10 +130,11 @@ class ProductsBannerPlugin
 
     private function init_views(): void
     {
+        $this->banner_item_field_view = new BannerItemFieldView();
         $this->settings_page_view = new SettingsPageView();
         $this->skip_field_view = new SkipFieldView();
         $this->repeat_field_view = new RepeatFieldView();
-        $this->banners_fields_view = new BannersFieldsView();
+        $this->banners_fields_view = new BannersFieldsView($this->banner_item_field_view);
     }
 
     private function init_controllers(): void
@@ -161,6 +156,6 @@ class ProductsBannerPlugin
     }
 }
 
-$plugin = ProductsBannerPlugin::get_instance();
+$plugin = new ProductsBannerPlugin();
 register_activation_hook(__FILE__, [$plugin, 'activate']);
 register_deactivation_hook(__FILE__, [$plugin, 'deactivate']);
