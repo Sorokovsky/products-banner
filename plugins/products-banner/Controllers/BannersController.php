@@ -11,6 +11,10 @@ class BannersController
     private readonly BannerView $banner_view;
     private int $counter;
     private int $banner_index;
+    /**
+     * @property ?array<BannerModel>
+     */
+    private ?array $shuffled_banners;
 
     public function __construct(SettingsService $settings_service, BannerView $banner_view)
     {
@@ -18,6 +22,7 @@ class BannersController
         $this->banner_view = $banner_view;
         $this->counter = 0;
         $this->banner_index = 0;
+        $this->shuffled_banners = null;
     }
 
     public function maybe_insert_banner(): void
@@ -41,7 +46,8 @@ class BannersController
     private function get_next_banner(array $banners, bool $repeat): ?BannerModel
     {
         if (empty($banners)) {
-            return null;
+            $random_index = array_rand($banners);
+            return $banners[$random_index];
         }
         if ($repeat) {
             $index = $this->banner_index % count($banners);
@@ -49,8 +55,14 @@ class BannersController
             return $banners[$index];
         }
 
-        if ($this->banner_index < count($banners)) {
-            $banner = $banners[$this->banner_index];
+        if ($this->shuffled_banners === null) {
+            $this->shuffled_banners = $banners;
+            shuffle($this->shuffled_banners);
+            $this->banner_index = 0;
+        }
+
+        if ($this->banner_index < count($this->shuffled_banners)) {
+            $banner = $this->shuffled_banners[$this->banner_index];
             $this->banner_index++;
             return $banner;
         }
