@@ -12,12 +12,14 @@ Text Domain: products-banner
 
 namespace ProductsBanner;
 
+use ProductsBanner\Controllers\BannersController;
 use ProductsBanner\Controllers\SettingsController;
 use ProductsBanner\Parsers\BannersParser;
 use ProductsBanner\Repositories\SettingsRepository;
 use ProductsBanner\Services\SettingsService;
 use ProductsBanner\Views\BannerItemFieldView;
 use ProductsBanner\Views\BannersFieldsView;
+use ProductsBanner\Views\BannerView;
 use ProductsBanner\Views\RepeatFieldView;
 use ProductsBanner\Views\SettingsPageView;
 use ProductsBanner\Views\SkipFieldView;
@@ -46,9 +48,13 @@ class ProductsBannerPlugin
 {
     private readonly SettingsController $settings_controller;
 
+    private readonly BannersController $banners_controller;
+
     private readonly SettingsPageView $settings_page_view;
 
     private readonly RepeatFieldView $repeat_field_view;
+
+    private readonly BannerView $banner_view;
 
     private readonly SkipFieldView $skip_field_view;
 
@@ -135,6 +141,7 @@ class ProductsBannerPlugin
         $this->skip_field_view = new SkipFieldView();
         $this->repeat_field_view = new RepeatFieldView();
         $this->banners_fields_view = new BannersFieldsView($this->banner_item_field_view);
+        $this->banner_view = new BannerView();
     }
 
     private function init_controllers(): void
@@ -146,6 +153,7 @@ class ProductsBannerPlugin
             $this->repeat_field_view,
             $this->banners_fields_view
         );
+        $this->banners_controller = new BannersController($this->settings_service, $this->banner_view);
     }
 
     private function register_hooks(): void
@@ -153,6 +161,7 @@ class ProductsBannerPlugin
         add_action('admin_init', [$this->settings_controller, 'register_settings']);
         add_action("admin_menu", [$this->settings_controller, "register_editing_page"], 100);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
+        add_action('woocommerce_after_shop_loop_item', [$this->banners_controller, 'maybe_insert_banner'], 20);
     }
 }
 

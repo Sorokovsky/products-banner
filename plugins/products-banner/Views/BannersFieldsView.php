@@ -14,22 +14,14 @@ class BannersFieldsView
         $this->banner_item_field_view = $banner_item_field_view;
     }
 
-/**
- * @var array<BannerModel>
- * @return string
- */
     public function render(array $banners): string
     {
         $html = $this->render_html($banners);
         $styles = $this->render_styles();
-        $scripts = $this->render_scripts($banners);
-        return $html.$styles.$scripts;
+        $scripts = $this->render_scripts();
+        return $html . $styles . $scripts;
     }
 
-    /**
-     * @var array<BannerModel>
-     * @return string
-     */
     private function render_html(array $banners): string
     {
         $domain = SettingsService::DOMAIN;
@@ -37,6 +29,7 @@ class BannersFieldsView
         $url_title = __('Посилання (URL)', $domain);
         $action_title = __('Дія', $domain);
         $add_baner = __('Додати банер', $domain);
+
         $html = <<<HTML
             <div id="banners-repeater">
                 <table class="widefat" id="banners-table">
@@ -44,38 +37,41 @@ class BannersFieldsView
                         <tr>
                             <th style="width: 40%;">{$image_title}</th>
                             <th style="width: 40%;">{$url_title}</th>
-                        <th style="width: 20%;">${$action_title}</th>
+                            <th style="width: 20%;">{$action_title}</th>
                         </tr>
                     </thead>
                     <tbody>
 HTML;
-                if (!empty($banners) && is_array($banners)) {
-                    foreach ($banners as $index => $banner) {
-                        $html .= $this->banner_item_field_view->render($index, $banner);
-                    }
-                }
-                else {
-                    $no_banners = __('Банери ще не додані. Натисніть "Додати банер" щоб почати.', $domain);
-                    $html .= <<<HTML
+
+        if (!empty($banners) && is_array($banners)) {
+            $index = 0;
+            foreach ($banners as $banner) {
+                $html .= $this->banner_item_field_view->render($banner, $index);
+                $index++;
+            }
+        } else {
+            $no_banners = __('Банери ще не додані. Натисніть "Додати банер" щоб почати.', $domain);
+            $html .= <<<HTML
                     <tr class="no-banners-message">
                         <td colspan="3" style="text-align: center; padding: 30px; color: #888;">{$no_banners}</td>
                     </tr>
-                    HTML;
-                }
-                $html .= <<<HTML
-            </tbody>
-        </table>
-        <p>
-            <button type="button" class="button button-primary" id="add-banner">{$add_baner}</button>
-        </p>
-    </div>
-    HTML;
-    return $html;
+HTML;
+        }
+
+        $html .= <<<HTML
+                    </tbody>
+                </table>
+                <p>
+                    <button type="button" class="button button-primary" id="add-banner">{$add_baner}</button>
+                </p>
+            </div>
+HTML;
+        return $html;
     }
 
     private function render_styles(): string
     {
-        $styles = <<<HTML
+        return <<<HTML
         <style>
             .banner-image-wrapper {
                 display: flex;
@@ -129,36 +125,39 @@ HTML;
                 max-width: 300px;
             }
         </style>
-        HTML;
-        return $styles;
+HTML;
     }
 
-    /**
-     * @var array<BannerModel>
-     * @return string
-     */
-    private function render_scripts(array $banners): string
+    private function render_scripts(): string
     {
         $domain = SettingsService::DOMAIN;
         $media_title = __('Виберіть зображення для банера', $domain);
         $media_button_text = __('Вибрати', $domain);
-        $confirm = __('Ви впевнені, що хочете видалити цей банер?', $domain);
+        $confirm_text = __('Ви впевнені, що хочете видалити цей банер?', $domain);
         $no_image = __('Зображення не вибрано', $domain);
-        $count = count($banners);
-        $scripts = <<<HTML
+
+        // Отримуємо шаблон нового рядка і безпечно кодуємо його для JS
+        $new_row_template = $this->banner_item_field_view->render(null, '__INDEX__');
+        $new_row_template_json = wp_json_encode($new_row_template);
+
+        return <<<HTML
         <script type="text/javascript">
             jQuery(document).ready(function ($) {
                 var frame = null;
+                var newRowTemplate = {$new_row_template_json};
+
                 function openMediaUploader(button) {
                     var button = $(button);
                     var row = button.closest('.banner-row');
                     var imageInput = row.find('.banner-image-url');
                     var preview = row.find('.banner-image-preview');
                     var removeBtn = row.find('.remove-banner-image');
+
                     if (frame) {
                         frame.open();
                         return;
                     }
+
                     frame = wp.media({
                         title: '{$media_title}',
                         button: {
@@ -166,6 +165,7 @@ HTML;
                         },
                         multiple: false
                     });
+
                     frame.on('select', function () {
                         var attachment = frame.state().get('selection').first().toJSON();
                         imageInput.val(attachment.url);
@@ -175,6 +175,7 @@ HTML;
 
                     frame.open();
                 }
+
                 function removeImage(button) {
                     var button = $(button);
                     var row = button.closest('.banner-row');
@@ -186,38 +187,44 @@ HTML;
                     preview.html('<span class="no-image">{$no_image}</span>');
                     removeBtn.hide();
                 }
+
                 function addNewRow() {
                     var tableBody = $('#banners-table tbody');
                     tableBody.find('.no-banners-message').remove();
-                    var newRow = `{$this->banner_item_field_view->render($count, null)}`;
+
+                    var index = tableBody.find('tr').length;
+                    var newRow = newRowTemplate.replace(/__INDEX__/g, index);
                     tableBody.append(newRow);
                 }
+
                 $('#add-banner').on('click', function () {
                     addNewRow();
                 });
+
                 $(document).on('click', '.select-banner-image', function () {
                     openMediaUploader(this);
                 });
+
                 $(document).on('click', '.remove-banner-image', function () {
                     removeImage(this);
                 });
+
                 $(document).on('click', '.remove-banner', function () {
-                    if (confirm('<?php _e ?>')) {
+                    if (confirm('{$confirm_text}')) {
                         var row = $(this).closest('tr');
                         row.remove();
 
                         if ($('#banners-table tbody tr').length === 0) {
                             $('#banners-table tbody').append(`
-                    <tr class="no-banners-message">
-                        <td colspan="3" style="text-align: center; padding: 30px; color: #888;">{$confirm}</td>
-                    </tr>
-                    `);
+                                <tr class="no-banners-message">
+                                    <td colspan="3" style="text-align: center; padding: 30px; color: #888;">{$confirm_text}</td>
+                                </tr>
+                            `);
                         }
                     }
                 });
             });
         </script>
-        HTML;
-        return $scripts;
+HTML;
     }
 }
