@@ -16,6 +16,7 @@ use ProductsBanner\Controllers\SettingsController;
 use ProductsBanner\Parsers\BannersParser;
 use ProductsBanner\Repositories\SettingsRepository;
 use ProductsBanner\Services\SettingsService;
+use ProductsBanner\Views\BannersFieldsView;
 use ProductsBanner\Views\RepeatFieldView;
 use ProductsBanner\Views\SettingsPageView;
 use ProductsBanner\Views\SkipFieldView;
@@ -51,6 +52,8 @@ class ProductsBannerPlugin
 
     private readonly SkipFieldView $skip_field_view;
 
+    private readonly BannersFieldsView $banners_fields_view;
+
     private readonly SettingsRepository $settings_repository;
 
     private readonly SettingsService $settings_service;
@@ -65,7 +68,7 @@ class ProductsBannerPlugin
         return self::$instance;
     }
 
-    public function enqueue_admin_scripts($hook): void
+    public function enqueue_admin_scripts(string $hook): void
     {
         if ($hook !== 'woocommerce_page_' . SettingsService::OPTION_NAME) {
             return;
@@ -136,6 +139,7 @@ class ProductsBannerPlugin
         $this->settings_page_view = new SettingsPageView();
         $this->skip_field_view = new SkipFieldView();
         $this->repeat_field_view = new RepeatFieldView();
+        $this->banners_fields_view = new BannersFieldsView();
     }
 
     private function init_controllers(): void
@@ -144,7 +148,8 @@ class ProductsBannerPlugin
             $this->settings_page_view,
             $this->settings_service,
             $this->skip_field_view,
-            $this->repeat_field_view
+            $this->repeat_field_view,
+            $this->banners_fields_view
         );
     }
 
